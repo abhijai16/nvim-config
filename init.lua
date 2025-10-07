@@ -11,7 +11,6 @@ vim.opt.relativenumber = true
 vim.opt.scrolloff = 8
 vim.opt.updatetime = 50
 
-
 -- Clipboard
 vim.opt.clipboard = 'unnamedplus'
 
@@ -141,35 +140,44 @@ require("lazy").setup({
     end,
   },
 
-  -- Autocomplete
+  -- Autocomplete & Snippets
   {
     'hrsh7th/nvim-cmp',
     dependencies = {
-      'hrsh7th/cmp-nvim-lsp', 'hrsh7th/cmp-buffer', 'hrsh7th/cmp-path',
-      'L3MON4D3/LuaSnip', 'saadparwaiz1/cmp_luasnip',
+      'hrsh7th/cmp-nvim-lsp',
+      'hrsh7th/cmp-buffer',
+      'hrsh7th/cmp-path',
+      'L3MON4D3/LuaSnip',
+      'saadparwaiz1/cmp_luasnip',
+      'rafamadriz/friendly-snippets', -- ✅ Add snippet library
     },
     config = function()
       local cmp = require('cmp')
       local luasnip = require('luasnip')
+      require("luasnip.loaders.from_vscode").lazy_load() -- Load friendly snippets
+      require("luasnip.loaders.from_lua").lazy_load({ paths = "~/.config/nvim/snippets" }) -- Load custom snippets
+
       cmp.setup({
         snippet = { expand = function(args) luasnip.lsp_expand(args.body) end },
         mapping = cmp.mapping.preset.insert({
           ['<C-Space>'] = cmp.mapping.complete(),
           ['<C-y>'] = cmp.mapping.confirm({ select = true }),
-          ['<C-n>'] = cmp.mapping(function(fallback)
+          ['<Tab>'] = cmp.mapping(function(fallback)
             if cmp.visible() then cmp.select_next_item()
             elseif luasnip.expand_or_jumpable() then luasnip.expand_or_jump()
             else fallback() end
           end, { "i", "s" }),
-          ['<C-p>'] = cmp.mapping(function(fallback)
+          ['<S-Tab>'] = cmp.mapping(function(fallback)
             if cmp.visible() then cmp.select_prev_item()
             elseif luasnip.jumpable(-1) then luasnip.jump(-1)
             else fallback() end
           end, { "i", "s" }),
         }),
         sources = cmp.config.sources({
-          { name = 'nvim_lsp' }, { name = 'luasnip' },
-          { name = 'buffer' }, { name = 'path' },
+          { name = 'nvim_lsp' },
+          { name = 'luasnip' },
+          { name = 'buffer' },
+          { name = 'path' },
         })
       })
     end,
@@ -186,7 +194,7 @@ require("lazy").setup({
   -- Copilot
   { 'github/copilot.vim' },
 
-  -- ToggleTerm for bottom terminal
+  -- ToggleTerm
   {
     "akinsho/toggleterm.nvim",
     config = function()
@@ -203,50 +211,47 @@ require("lazy").setup({
 })
 
 -- ===================================================================
--- Bufferline Setup (VS Code-like)
+-- Custom Java Snippets
+-- ===================================================================
+local snippet_path = vim.fn.stdpath("config") .. "/snippets/java.lua"
+if not vim.loop.fs_stat(snippet_path) then
+  vim.fn.mkdir(vim.fn.stdpath("config") .. "/snippets", "p")
+  local file = io.open(snippet_path, "w")
+  file:write([[
+local ls = require("luasnip")
+local s = ls.snippet
+local t = ls.text_node
+local i = ls.insert_node
+
+return {
+  s("sout", { t("System.out.println("), i(1), t(");") }),
+  s("psvm", { t("public static void main(String[] args) {"), i(1), t("}") }),
+}
+]])
+  file:close()
+end
+
+-- ===================================================================
+-- Bufferline Setup
 -- ===================================================================
 require("bufferline").setup({
   options = {
-    numbers = "ordinal",           -- show buffer numbers
-    close_command = "bdelete! %d", -- close buffer
+    numbers = "ordinal",
+    close_command = "bdelete! %d",
     right_mouse_command = "bdelete! %d",
-    left_mouse_command = "buffer %d",
-    middle_mouse_command = nil,
-    indicator_icon = '▎',           -- current buffer indicator
-    buffer_close_icon = '🗙',       -- close icon on right
-    modified_icon = '●',           -- modified indicator
-    close_icon = '⛒',              -- global close icon
-    left_trunc_marker = '',
-    right_trunc_marker = '',
-    max_name_length = 30,
-    max_prefix_length = 15,
-    tab_size = 18,
-    diagnostics = "nvim_lsp",      -- show LSP diagnostics in tab
-    show_buffer_icons = true,       -- show filetype icons (important!)
-    show_buffer_close_icons = true, -- show close icon for each buffer
-    show_close_icon = false,        -- we only want per-buffer close icon
-    show_tab_indicators = true,
-    persist_buffer_sort = true,
-    enforce_regular_tabs = false,
+    indicator_icon = '▎',
+    buffer_close_icon = '🗙',
+    modified_icon = '●',
+    close_icon = '⛒',
+    separator_style = "slant",
+    diagnostics = "nvim_lsp",
+    show_buffer_icons = true,
+    show_buffer_close_icons = true,
+    show_close_icon = false,
     always_show_bufferline = true,
-    separator_style = "slant",      -- VS Code-like slant separators
     sort_by = 'id',
   },
 })
-
--- Bufferline keymaps
-vim.keymap.set('n', '<A-1>', ':BufferLineGoToBuffer 1<CR>')
-vim.keymap.set('n', '<A-2>', ':BufferLineGoToBuffer 2<CR>')
-vim.keymap.set('n', '<A-3>', ':BufferLineGoToBuffer 3<CR>')
-vim.keymap.set('n', '<A-4>', ':BufferLineGoToBuffer 4<CR>')
-vim.keymap.set('n', '<A-5>', ':BufferLineGoToBuffer 5<CR>')
-vim.keymap.set('n', '<A-6>', ':BufferLineGoToBuffer 6<CR>')
-vim.keymap.set('n', '<A-7>', ':BufferLineGoToBuffer 7<CR>')
-vim.keymap.set('n', '<A-8>', ':BufferLineGoToBuffer 8<CR>')
-vim.keymap.set('n', '<A-9>', ':BufferLineGoToBuffer 9<CR>')
-vim.keymap.set('n', '<A-0>', ':BufferLineGoToBuffer -1<CR>')
-vim.keymap.set('n', '<S-l>', ':BufferLineCycleNext<CR>')
-vim.keymap.set('n', '<S-h>', ':BufferLineCyclePrev<CR>')
 
 -- ===================================================================
 -- Keymaps
@@ -365,3 +370,4 @@ vim.api.nvim_create_autocmd("FileType", {
 })
 
 vim.keymap.set("n", "<C-/>", "<cmd>silent !tmux neww tmux-sessionizer<CR>")
+

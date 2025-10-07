@@ -1,0 +1,9 @@
+local ls = require("luasnip")
+local s = ls.snippet
+local t = ls.text_node
+local i = ls.insert_node
+
+return {
+  s("sout", { t("System.out.println("), i(1), t(");") }),
+  s("psvm", { t("public static void main(String[] args) {"), i(1), t("}") }),
+}
